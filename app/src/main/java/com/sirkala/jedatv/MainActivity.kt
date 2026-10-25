@@ -1,10 +1,11 @@
-package com.alexk.tvlock
+package com.sirkala.jedatv
 
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.view.KeyEvent
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -15,7 +16,10 @@ class MainActivity : Activity() {
     private lateinit var graceBtn: Button
     private lateinit var keypad: KeypadHelper
     private var pinBuffer = ""
-    private var pinMode = false
+    private enum class PinMode { NONE, NEW, NEW_CONFIRM, ADMIN }
+    private var pinMode = PinMode.NONE
+    private var adminAuthenticated = false
+    private var newPinFirst = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,11 +42,12 @@ class MainActivity : Activity() {
             }
         }
         findViewById<TextView>(R.id.version_text).text =
-            "TV App Lock  v " + (try {
+            "Sirkala  v " + (try {
                 packageManager.getPackageInfo(packageName, 0).versionName
             } catch (_: Exception) { "?" })
         keypad = KeypadHelper(this, findViewById(R.id.main_root),
             onDigit = { kPinDigit(it) }, onBackspace = { kPinBack() }, onClear = { kPinClear() })
+        Prefs(this).addNewLaunchableApps()
         updateStatus()
     }
 
@@ -52,7 +57,32 @@ class MainActivity : Activity() {
             startServiceIfAllowed()
             LockPollService.instance?.reloadPrefs()
         }
-        updateStatus()
+        if (Prefs(this).hasPin() && !adminAuthenticated) showAdminPinEntry()
+        else updateStatus()
+        statusText.postDelayed({ if (pinMode == PinMode.NONE) updateStatus() }, 800)
+    }
+
+    override fun onStop() {
+        adminAuthenticated = false
+        pinMode = PinMode.NONE
+        pinBuffer = ""
+        newPinFirst = ""
+        keypad.hide()
+        super.onStop()
+    }
+
+    private fun setSettingsVisible(visible: Boolean) {
+        for (id in listOf(R.id.btn_setup_pin, R.id.btn_grace, R.id.btn_blocked, R.id.btn_service)) {
+            findViewById<Button>(id).visibility = if (visible) View.VISIBLE else View.GONE
+        }
+    }
+
+    private fun showAdminPinEntry() {
+        pinMode = PinMode.ADMIN
+        pinBuffer = ""
+        setSettingsVisible(false)
+        statusText.text = "Masukkan PIN orang tua untuk membuka pengaturan"
+        keypad.show()
     }
 
     private fun hasUsageAccess(): Boolean {
@@ -87,7 +117,7 @@ class MainActivity : Activity() {
     private fun graceLabel(v: Int): String = when {
         v < 0 -> getString(R.string.grace_reboot)
         v == 0 -> getString(R.string.grace_always)
-        else -> "$v хв"
+        else -> "$v menit"
     }
 
     private fun updateStatus() {
@@ -96,6 +126,7 @@ class MainActivity : Activity() {
         val until = p.unlockUntil()
         val now = System.currentTimeMillis()
         val lockLine = when {
+            !p.hasPin() -> getString(R.string.lock_needs_pin)
             until <= now -> getString(R.string.lock_armed)
             until == Long.MAX_VALUE -> getString(R.string.lock_open_now)
             else -> getString(R.string.lock_open_fmt,
@@ -103,30 +134,32 @@ class MainActivity : Activity() {
         }
         statusText.text = getString(
             R.string.status_fmt,
-            if (p.pin().isEmpty()) "не встановлено ⚠️" else "встановлено ✅",
-            p.blockedList().joinToString(", ").ifEmpty { "—" },
+            if (!p.hasPin()) "belum dibuat ⚠️" else "sudah dibuat ✅",
+            p.blockedList().size.toString(),
             graceLabel(p.graceMinutes()),
-            if (!hasUsageAccess()) "немає дозволу на доступ ⚠️"
-            else if (running) "активний ✅" else "зупинений ⚠️",
+            if (!hasUsageAccess()) "izin penggunaan belum ada ⚠️"
+            else if (running) "aktif ✅" else "tidak aktif ⚠️",
             lockLine)
     }
 
     private fun showPinEntry() {
+        if (Prefs(this).hasPin() && !adminAuthenticated) return
         pinBuffer = ""
-        pinMode = true
+        newPinFirst = ""
+        pinMode = PinMode.NEW
         currentFocus?.clearFocus() // button must not eat the OK key
         statusText.text = getString(R.string.enter_new_pin)
+        keypad.show()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (pinMode) {
+        if (pinMode != PinMode.NONE) {
             val digit = keyToDigit(keyCode)
             if (digit != null) { kPinDigit(digit); return true }
             if (keyCode == KeyEvent.KEYCODE_DEL) { kPinBack(); return true }
             if (keyCode == KeyEvent.KEYCODE_BACK && keypad.onBackPressed()) return true
             if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-                if (!keypad.visible) confirmPin()
-                return true
+                if (!keypad.visible) { confirmPin(); return true }
             }
             keypad.onKeyDown(keyCode)
             return super.onKeyDown(keyCode, event)
@@ -153,7 +186,11 @@ class MainActivity : Activity() {
 
     private fun kPinClear() {
         pinBuffer = ""
-        statusText.text = getString(R.string.enter_new_pin)
+        statusText.text = when (pinMode) {
+            PinMode.ADMIN -> "Masukkan PIN orang tua"
+            PinMode.NEW_CONFIRM -> "Ulangi PIN baru"
+            else -> getString(R.string.enter_new_pin)
+        }
     }
 
     private fun keyToDigit(k: Int): String? = when (k) {
@@ -171,13 +208,47 @@ class MainActivity : Activity() {
     }
 
     private fun confirmPin() {
-        if (pinBuffer.length == 4) {
-            Prefs(this).setPin(pinBuffer)
-            Toast.makeText(this, R.string.pin_saved, Toast.LENGTH_LONG).show()
-            pinBuffer = ""; pinMode = false
-            updateStatus()
-        } else {
+        if (pinBuffer.length != 4) {
             Toast.makeText(this, R.string.pin_need_4, Toast.LENGTH_LONG).show()
+            return
+        }
+        val p = Prefs(this)
+        if (pinMode == PinMode.ADMIN) {
+            if (p.checkPin(pinBuffer)) {
+                adminAuthenticated = true
+                pinMode = PinMode.NONE
+                pinBuffer = ""
+                keypad.hide()
+                setSettingsVisible(true)
+                updateStatus()
+            } else {
+                pinBuffer = ""
+                val wait = p.pinWaitSeconds()
+                statusText.text = if (wait > 0) "Tunggu $wait detik" else "PIN salah"
+            }
+        } else if (pinMode == PinMode.NEW) {
+            newPinFirst = pinBuffer
+            pinBuffer = ""
+            pinMode = PinMode.NEW_CONFIRM
+            statusText.text = "Ulangi PIN baru untuk konfirmasi"
+        } else if (pinMode == PinMode.NEW_CONFIRM) {
+            if (pinBuffer != newPinFirst) {
+                pinBuffer = ""
+                newPinFirst = ""
+                pinMode = PinMode.NEW
+                statusText.text = "PIN berbeda. Masukkan PIN baru lagi"
+                return
+            }
+            p.setPin(pinBuffer)
+            adminAuthenticated = true
+            Toast.makeText(this, R.string.pin_saved, Toast.LENGTH_LONG).show()
+            pinBuffer = ""
+            newPinFirst = ""
+            pinMode = PinMode.NONE
+            keypad.hide()
+            setSettingsVisible(true)
+            updateStatus()
+            LockPollService.instance?.reloadPrefs()
         }
     }
 }

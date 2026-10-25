@@ -8,15 +8,15 @@ plugins {
 val releaseKeystore = System.getenv("RELEASE_KEYSTORE")
 
 android {
-    namespace = "com.alexk.tvlock"
+    namespace = "com.sirkala.jedatv"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.alexk.tvlock"
-        minSdk = 21
+        applicationId = "com.sirkala.jedatv"
+        minSdk = 26
         targetSdk = 34
-        versionCode = 26
-        versionName = "1.25"
+        versionCode = 1
+        versionName = "0.1.0"
     }
 
     if (!releaseKeystore.isNullOrBlank()) {
@@ -51,4 +51,5 @@ android {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
+    testImplementation("junit:junit:4.13.2")
 }

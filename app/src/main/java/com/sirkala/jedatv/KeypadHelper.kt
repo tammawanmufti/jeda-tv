@@ -1,4 +1,4 @@
-package com.alexk.tvlock
+package com.sirkala.jedatv
 
 import android.app.Activity
 import android.view.KeyEvent
@@ -47,7 +47,7 @@ class KeypadHelper(
         return true
     }
 
-    private fun show() {
+    fun show() {
         if (root == null) {
             root = activity.layoutInflater
                 .inflate(R.layout.keypad, container, false) as ViewGroup

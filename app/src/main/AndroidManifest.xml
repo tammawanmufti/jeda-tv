@@ -13,7 +13,7 @@
         tools:ignore="QueryAllPackagesPermission" />
 
     <application
-        android:label="TV App Lock"
+        android:label="@string/app_title"
         android:icon="@drawable/ic_launcher_tvlock"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
         android:allowBackup="false">
@@ -21,7 +21,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:banner="@android:drawable/ic_lock_idle_lock">
+            android:banner="@drawable/ic_launcher_tvlock">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
@@ -43,7 +43,7 @@
 
         <service
             android:name=".LockPollService"
-            android:exported="true"
+            android:exported="false"
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"

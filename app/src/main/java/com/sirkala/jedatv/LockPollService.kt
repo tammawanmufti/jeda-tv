@@ -1,4 +1,4 @@
-package com.alexk.tvlock
+package com.sirkala.jedatv
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -28,8 +28,8 @@ class LockPollService : Service() {
     private lateinit var usm: UsageStatsManager
 
     private var blocked = setOf<String>()
-    private var unlockUntil = 0L
     private var lastTop: String? = null
+    private var lastYouTubeRestricted: Boolean? = null
     private var seeded = false
     private var gateUp = false
     private var gateRaisedAt = 0L
@@ -74,6 +74,22 @@ class LockPollService : Service() {
 
     private fun tick() {
         val now = System.currentTimeMillis()
+        val prefs = Prefs(this)
+        // Never present a gate before a parent has created a private PIN.
+        if (!prefs.hasPin()) return
+        if (gateUp && targetPkg == LockPolicy.YOUTUBE && LockPolicy.youtubeFreeAt(now)) {
+            // The TV was already at a PIN screen when the weekend window opened.
+            gateUp = false
+            blackoutHold = false
+            GateOverlay.hide()
+            PinActivity.instance?.dismissForFreeWindow()
+            targetPkg = null
+            packageManager.getLaunchIntentForPackage(LockPolicy.YOUTUBE)?.let {
+                it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(it)
+            }
+            return
+        }
         val from = if (seeded) now - 15_000 else now - 10 * 60_000L
         val events = usm.queryEvents(from, now)
         var evTop: String? = null
@@ -92,6 +108,14 @@ class LockPollService : Service() {
         if (evTop != null || lastTop == null) lastTop = t
         val foregroundChanged = evTop != null && evTop != prevTop
         if (t == null) { seeded = true; return }
+        if (prefs.graceMinutes() == 0 && prevTop == prefs.unlockedPackage() && t != prevTop) {
+            prefs.closeGrace()
+        }
+        val restricted = LockPolicy.requiresPin(t, blocked, now)
+        val locked = restricted && !prefs.isUnlocked(t, now)
+        val scheduleJustClosed = t == LockPolicy.YOUTUBE &&
+            lastYouTubeRestricted == false && restricted
+        lastYouTubeRestricted = if (t == LockPolicy.YOUTUBE) restricted else null
         if (!seeded) {
             android.util.Log.i("TVLOCK", "seeded top=$t")
             seeded = true
@@ -102,7 +126,7 @@ class LockPollService : Service() {
         // But the fuse may never drop the screen onto a BLOCKED app: there it
         // re-raises the gate instead (fresh 10 s budget each round).
         if (GateOverlay.isShown && now - GateOverlay.shownAt > OVERLAY_MAX_MS) {
-            if (t in blocked) {
+            if (locked) {
                 FileLogger.log("fuse: blocked top=$t under stale overlay — re-raising")
                 gateUp = false
                 raiseGate(t, now)
@@ -117,7 +141,7 @@ class LockPollService : Service() {
         // overlay is up, and NEITHER the gate nor a blocked app is on top
         // (parent pressed HOME from the gate → launcher), nothing is being
         // guarded — let the screen live again right away.
-        if (!gateUp && GateOverlay.isShown && t != packageName && t !in blocked) {
+        if (!gateUp && GateOverlay.isShown && t != packageName && !locked) {
             FileLogger.log("overlay release: top=$t, no gate, nothing blocked")
             GateOverlay.hide()
         }
@@ -131,7 +155,7 @@ class LockPollService : Service() {
                 GateOverlay.hide()
                 return
             }
-            if (t !in blocked) {
+            if (!locked) {
                 // The blocked app vanished because OUR force-stop killed it and
                 // the launcher is showing: HOLD the blackout. A spam-press can
                 // land at any moment, and releasing the overlay here is exactly
@@ -150,6 +174,7 @@ class LockPollService : Service() {
                 // HOME, launcher is showing): nothing to guard — stand down and
                 // release the blackout immediately
                 gateUp = false
+                targetPkg = null
                 GateOverlay.hide()
                 return
             }
@@ -163,7 +188,7 @@ class LockPollService : Service() {
                 // app is merely staying foreground (never gated), nothing re-fires.
                 android.util.Log.w("TVLOCK", "gate did not appear — re-arming")
                 gateUp = false
-                if (t in blocked && now >= unlockUntil && now >= recoveryReadyAt) {
+                if (locked && now >= recoveryReadyAt) {
                     raiseGate(t, now)
                     return
                 }
@@ -184,15 +209,14 @@ class LockPollService : Service() {
         // just sits there. The overlay itself is the trigger: keep the gate up.
         // (A legit unlock closes the overlay in onUnlocked, so this can never
         // fight a parent who is inside the app during grace.)
-        if (GateOverlay.isShown && t in blocked && now >= unlockUntil) {
+        if (GateOverlay.isShown && locked) {
             if (now - gateRaisedAt > GATE_CONFIRM_MS) {
                 FileLogger.log("presence: blocked $t under overlay, gate down — raising")
                 raiseGate(t, now)
             }
             return
         }
-        unlockUntil = Prefs(this).unlockUntil()
-        if (t in blocked && foregroundChanged && now >= unlockUntil) {
+        if (locked && (foregroundChanged || scheduleJustClosed)) {
             // evTs = the event's own timestamp; now-evTs = how late UsageStats
             // surfaced it to us. This is the detection gap the overlay has to
             // beat on a fast dedicated-button press.
@@ -255,15 +279,16 @@ class LockPollService : Service() {
 
     fun reloadPrefs() {
         val p = Prefs(this)
+        p.addNewLaunchableApps()
         val set = p.blockedList().toMutableSet()
         set.remove(packageName)
         blocked = set
         p.setBlocked(set)
-        unlockUntil = 0L
         gateUp = false            // re-arm instantly on any config change
         blackoutHold = false      // settings opened by the parent: release all holds
         GateOverlay.hide()        // parent touched settings: never trap a black screen
         seeded = false            // re-seed top app
+        lastYouTubeRestricted = null
     }
 
     /** Correct PIN entered: start grace, relaunch the app the user wanted. */
@@ -274,9 +299,8 @@ class LockPollService : Service() {
             grace < 0 -> Long.MAX_VALUE
             else -> System.currentTimeMillis() + maxOf(grace * 60_000L, 15_000L)
         }
-        p.setUnlockUntil(until)
-        unlockUntil = until
         val t = targetPkg
+        if (t != null) p.setUnlock(t, until)
         gateUp = false
         blackoutHold = false
         GateOverlay.hide()

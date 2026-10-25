@@ -1,4 +1,4 @@
-package com.alexk.tvlock
+package com.sirkala.jedatv
 
 import android.annotation.SuppressLint
 import android.content.Context

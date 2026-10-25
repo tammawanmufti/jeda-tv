@@ -1,4 +1,4 @@
-package com.alexk.tvlock
+package com.sirkala.jedatv
 
 import android.content.Context
 import android.os.SystemClock
@@ -10,8 +10,8 @@ import java.io.FileWriter
  *
  * Why: the Rockteck ROM filters third-party apps' logcat output entirely —
  * Log.i/w/e from LockPollService never reach `adb logcat`, so field races
- * (fast-button press) were unmeasurable. This appends to
- * <externalFiles>/tvlock.log, which adb shell can read without root.
+ * (fast-button press) were unmeasurable. This appends to the app's
+ * private files directory so package usage is not exposed on shared storage.
  *
  * Kept deliberately cheap: one line per event, monotonic clock + wall time,
  * file trimmed when it grows past 256 KB. Every gate-lifecycle decision point
@@ -24,12 +24,10 @@ object FileLogger {
 
     fun init(context: Context) {
         try {
-            val dir = context.getExternalFilesDir(null) ?: context.filesDir
+            val dir = context.filesDir
             logFile = File(dir, "tvlock.log")
             if ((logFile?.length() ?: 0L) > TRIM_AT) logFile?.delete()
             writer = FileWriter(logFile, true)
-            // adb must be able to `cat` this for field diagnosis
-            logFile?.setReadable(true, false)
             android.util.Log.i("TVLOCK", "file logger at ${logFile?.absolutePath}")
         } catch (e: Exception) {
             android.util.Log.e("TVLOCK", "file logger init failed", e)
@@ -50,7 +48,6 @@ object FileLogger {
                     runCatching { w.close() }
                     f.delete()
                     FileWriter(f, true).also { writer = it }
-                    f.setReadable(true, false)
                 }
             }
         } catch (_: Exception) { /* never break the lock over logging */ }

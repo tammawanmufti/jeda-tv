@@ -1,28 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title">TV App Lock</string>
-    <string name="service_description">TV App Lock</string>
-    <string name="locked_title">🔒 Protected app</string>
-    <string name="overlay_locked">⏳ Loading lock screen…</string>
-    <string name="pin_hint">Enter the 4-digit PIN with your remote</string>
-    <string name="wrong_pin">Wrong PIN</string>
-    <string name="unlocked">Unlocked</string>
-    <string name="btn_setup_pin">Set PIN</string>
-    <string name="btn_grace">Grace period (press = next value)</string>
-    <string name="btn_blocked">Apps to lock</string>
-    <string name="blocked_title">🔒 = locked. Press OK on a row to toggle. Back = exit</string>
-    <string name="self_block_guard">The locker cannot lock itself 🙂</string>
-    <string name="grace_set">Grace period: %1$s</string>
-    <string name="grace_reboot">until reboot</string>
-    <string name="grace_always">0 (ask every time)</string>
-    <string name="btn_service">Grant Usage Access (required)</string>
-    <string name="no_usage_settings">Usage access screen not found — grant it manually in Settings</string>
-    <string name="enter_new_pin">Type a new PIN — the 4th digit saves automatically</string>
+    <string name="app_title">Sirkala</string>
+    <string name="service_description">Sirkala</string>
+    <string name="locked_title">🔒 Aplikasi terkunci</string>
+    <string name="overlay_locked">⏳ Menyiapkan layar PIN…</string>
+    <string name="pin_hint">Masukkan PIN 4 digit dengan remote</string>
+    <string name="wrong_pin">PIN salah</string>
+    <string name="unlocked">Terbuka</string>
+    <string name="btn_setup_pin">Buat atau ubah PIN</string>
+    <string name="btn_grace">Jeda PIN (tekan untuk mengubah)</string>
+    <string name="btn_blocked">Aplikasi yang dikunci</string>
+    <string name="blocked_title">🔒 = terkunci. Tekan OK untuk mengubah. Back = kembali</string>
+    <string name="self_block_guard">Aplikasi kunci tidak bisa mengunci dirinya sendiri</string>
+    <string name="grace_set">Jeda PIN: %1$s</string>
+    <string name="grace_reboot">sampai TV menyala ulang</string>
+    <string name="grace_always">0 (PIN setiap kali)</string>
+    <string name="btn_service">Berikan izin penggunaan</string>
+    <string name="no_usage_settings">Menu izin tidak ditemukan; buka Setelan TV</string>
+    <string name="enter_new_pin">Masukkan PIN baru 4 digit, lalu ulangi untuk konfirmasi</string>
     <string name="pin_typing_fmt">PIN: %1$s</string>
-    <string name="pin_saved">PIN saved</string>
-    <string name="pin_need_4">Exactly 4 digits required</string>
-    <string name="status_fmt">PIN: %1$s\nLocked: %2$s\nGrace: %3$s\nService: %4$s\n%5$s</string>
-    <string name="lock_armed">Lock: armed 🔒</string>
-    <string name="lock_open_fmt">Lock: OPEN for %1$d more min 🔓</string>
-    <string name="lock_open_now">Lock: open session 🔓</string>
+    <string name="pin_saved">PIN tersimpan</string>
+    <string name="pin_need_4">PIN harus 4 digit</string>
+    <string name="status_fmt">PIN: %1$s\nAplikasi dikunci: %2$s\nJeda PIN: %3$s\nLayanan: %4$s\n%5$s\nYouTube bebas PIN Sabtu–Minggu 06.00–21.00 WIB</string>
+    <string name="lock_armed">Kunci aktif 🔒</string>
+    <string name="lock_needs_pin">Belum aktif: buat PIN dahulu</string>
+    <string name="lock_open_fmt">Terbuka %1$d menit lagi 🔓</string>
+    <string name="lock_open_now">Sesi terbuka 🔓</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.alexk.tvlock
+package com.sirkala.jedatv
 
 import android.app.Activity
 import android.os.Bundle
@@ -9,18 +9,22 @@ import android.widget.Toast
 
 class PinActivity : Activity() {
 
+    companion object { var instance: PinActivity? = null }
+
     private lateinit var display: TextView
     private lateinit var keypad: KeypadHelper
     private var entered = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        instance = this
         setContentView(R.layout.activity_pin)
         display = findViewById(R.id.pin_display)
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         keypad = KeypadHelper(this, findViewById(R.id.pin_root),
             onDigit = { feed(it) }, onBackspace = { back() }, onClear = { clear() })
+        keypad.show()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -69,17 +73,23 @@ class PinActivity : Activity() {
     }
 
     private fun checkPin() {
-        val expected = Prefs(this).pin()
-        if (expected.isEmpty() || entered == expected) {
+        val prefs = Prefs(this)
+        if (prefs.checkPin(entered)) {
             accepted = true
             LockPollService.instance?.onUnlocked()
             Toast.makeText(this, R.string.unlocked, Toast.LENGTH_SHORT).show()
             finish()
         } else {
             entered = ""
-            display.text = getString(R.string.wrong_pin)
+            val wait = prefs.pinWaitSeconds()
+            display.text = if (wait > 0) "Tunggu $wait detik" else getString(R.string.wrong_pin)
             display.postDelayed({ display.text = "" }, 1500)
         }
+    }
+
+    fun dismissForFreeWindow() {
+        accepted = true
+        finish()
     }
 
     private var accepted = false
@@ -87,6 +97,11 @@ class PinActivity : Activity() {
     override fun onPause() {
         super.onPause()
         if (!accepted) LockPollService.instance?.onGateDismissed()
+    }
+
+    override fun onDestroy() {
+        if (instance === this) instance = null
+        super.onDestroy()
     }
 
     // Launch-shortcut class of the RT-G2 remote.

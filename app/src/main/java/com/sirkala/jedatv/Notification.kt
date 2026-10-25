@@ -1,4 +1,4 @@
-package com.alexk.tvlock
+package com.sirkala.jedatv
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -10,14 +10,14 @@ object LockNotification {
 
     fun makeChannel(context: Context) {
         val m = context.getSystemService(NotificationManager::class.java)
-        val ch = NotificationChannel(CHANNEL, "TV App Lock", NotificationManager.IMPORTANCE_MIN)
+        val ch = NotificationChannel(CHANNEL, "Sirkala", NotificationManager.IMPORTANCE_MIN)
         m.createNotificationChannel(ch)
     }
 
     fun build(context: Context): Notification =
         Notification.Builder(context, CHANNEL)
             .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
-            .setContentTitle("TV App Lock")
+            .setContentTitle("Sirkala")
             .setContentText("running")
             .setOngoing(true)
             .build()
