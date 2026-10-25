@@ -10,14 +10,14 @@ object LockNotification {
 
     fun makeChannel(context: Context) {
         val m = context.getSystemService(NotificationManager::class.java)
-        val ch = NotificationChannel(CHANNEL, "Sirkala", NotificationManager.IMPORTANCE_MIN)
+        val ch = NotificationChannel(CHANNEL, "jeda-tv", NotificationManager.IMPORTANCE_MIN)
         m.createNotificationChannel(ch)
     }
 
     fun build(context: Context): Notification =
         Notification.Builder(context, CHANNEL)
             .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
-            .setContentTitle("Sirkala")
+            .setContentTitle("jeda-tv")
             .setContentText("running")
             .setOngoing(true)
             .build()

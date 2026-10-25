@@ -1,13 +1,13 @@
-# Sirkala
+# jeda-tv
 
-Sirkala adalah aplikasi sumber terbuka untuk membantu keluarga mengunci
+jeda-tv adalah aplikasi sumber terbuka untuk membantu keluarga mengunci
 aplikasi Android TV dengan PIN empat digit. Aplikasi ini gratis, tanpa iklan,
 akun, pelacak, atau izin internet. Semua pengaturan disimpan di TV.
 
-**Asal proyek:** Sirkala merupakan turunan dari
+**Asal proyek:** jeda-tv merupakan turunan dari
 [TV App Lock oleh Oleksii Klots](https://github.com/oleksii-klots/tv-app-lock).
 Hak cipta Oleksii Klots, [lisensi MIT asli](LICENSE), dan riwayat commit proyek
-asal dipertahankan. Sirkala dikelola secara terpisah oleh
+asal dipertahankan. jeda-tv dikelola secara terpisah oleh
 [tammawanmufti](https://github.com/tammawanmufti).
 
 ## Fitur
@@ -44,14 +44,14 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
 Di TV, berikan izin **Akses penggunaan** dan **Tampil di atas aplikasi lain**
-kepada Sirkala. Buka Sirkala, buat PIN langsung dengan remote, lalu pilih
+kepada jeda-tv. Buka jeda-tv, buat PIN langsung dengan remote, lalu pilih
 aplikasi yang akan dikunci. Jangan bagikan PIN melalui chat atau commit Git.
 
-ID paket Sirkala adalah `com.sirkala.jedatv`. Android menganggapnya aplikasi
+ID paket jeda-tv adalah `com.sirkala.jedatv`. Android menganggapnya aplikasi
 berbeda dari TV App Lock (`com.alexk.tvlock`), sehingga PIN dan daftar aplikasi
 terkunci **tidak berpindah otomatis**. Kedua aplikasi dapat terpasang bersamaan
-selama proses pindah. Setelah Sirkala siap dan diuji, hentikan atau hapus versi
-lama agar kedua layanan tidak saling mengunci. Untuk memperbarui Sirkala di
+selama proses pindah. Setelah jeda-tv siap dan diuji, hentikan atau hapus versi
+lama agar kedua layanan tidak saling mengunci. Untuk memperbarui jeda-tv di
 masa depan tanpa menghapus pengaturannya, gunakan ID paket dan kunci
 penandatanganan APK yang sama.
 
@@ -60,11 +60,11 @@ penandatanganan APK yang sama.
 Penguncian memantau aplikasi aktif secara berkala. Layar pertama aplikasi
 terkunci mungkin terlihat sesaat sebelum layar PIN muncul. Orang yang dapat
 mengubah Setelan TV, mencabut izin, atau memakai ADB dapat melewati kunci ini.
-Sirkala ditujukan untuk batasan penggunaan keluarga, bukan sebagai pengaman
+jeda-tv ditujukan untuk batasan penggunaan keluarga, bukan sebagai pengaman
 perangkat dari pengguna dengan akses administratif. Input HDMI berada di luar
 cakupan kunci aplikasi.
 
 ## Lisensi
 
-[MIT](LICENSE). Kode asal dibuat oleh Oleksii Klots. Perubahan Sirkala dibuat
+[MIT](LICENSE). Kode asal dibuat oleh Oleksii Klots. Perubahan jeda-tv dibuat
 untuk proyek turunan ini.
