@@ -42,7 +42,7 @@ class MainActivity : Activity() {
             }
         }
         findViewById<TextView>(R.id.version_text).text =
-            "jeda-tv  v " + (try {
+            "JedaTV  v " + (try {
                 packageManager.getPackageInfo(packageName, 0).versionName
             } catch (_: Exception) { "?" })
         keypad = KeypadHelper(this, findViewById(R.id.main_root),

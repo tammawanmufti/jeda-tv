@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title">jeda-tv</string>
-    <string name="service_description">jeda-tv</string>
+    <string name="app_title">JedaTV</string>
+    <string name="service_description">JedaTV</string>
     <string name="locked_title">🔒 Aplikasi terkunci</string>
     <string name="overlay_locked">⏳ Menyiapkan layar PIN…</string>
     <string name="pin_hint">Masukkan PIN 4 digit dengan remote</string>
