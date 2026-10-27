@@ -29,7 +29,7 @@ class LockPollService : Service() {
 
     private var blocked = setOf<String>()
     private var lastTop: String? = null
-    private var lastYouTubeRestricted: Boolean? = null
+    private var lastRestricted: Boolean? = null
     private var seeded = false
     private var gateUp = false
     private var gateRaisedAt = 0L
@@ -77,14 +77,16 @@ class LockPollService : Service() {
         val prefs = Prefs(this)
         // Never present a gate before a parent has created a private PIN.
         if (!prefs.hasPin()) return
-        if (gateUp && targetPkg == LockPolicy.YOUTUBE && LockPolicy.youtubeFreeAt(now)) {
-            // The TV was already at a PIN screen when the weekend window opened.
+        val gateTarget = targetPkg
+        if (gateUp && gateTarget != null && !LockPolicy.requiresPin(
+                gateTarget, blocked, now, prefs.schedules(gateTarget), prefs.isPaused(now))) {
+            // A schedule window or parent pause began while the PIN screen was open.
             gateUp = false
             blackoutHold = false
             GateOverlay.hide()
             PinActivity.instance?.dismissForFreeWindow()
             targetPkg = null
-            packageManager.getLaunchIntentForPackage(LockPolicy.YOUTUBE)?.let {
+            packageManager.getLaunchIntentForPackage(gateTarget)?.let {
                 it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(it)
             }
@@ -111,11 +113,11 @@ class LockPollService : Service() {
         if (prefs.graceMinutes() == 0 && prevTop == prefs.unlockedPackage() && t != prevTop) {
             prefs.closeGrace()
         }
-        val restricted = LockPolicy.requiresPin(t, blocked, now)
+        val restricted = LockPolicy.requiresPin(t, blocked, now,
+            prefs.schedules(t), prefs.isPaused(now))
         val locked = restricted && !prefs.isUnlocked(t, now)
-        val scheduleJustClosed = t == LockPolicy.YOUTUBE &&
-            lastYouTubeRestricted == false && restricted
-        lastYouTubeRestricted = if (t == LockPolicy.YOUTUBE) restricted else null
+        val scheduleJustClosed = t == prevTop && lastRestricted == false && restricted
+        lastRestricted = restricted
         if (!seeded) {
             android.util.Log.i("TVLOCK", "seeded top=$t")
             seeded = true
@@ -288,7 +290,7 @@ class LockPollService : Service() {
         blackoutHold = false      // settings opened by the parent: release all holds
         GateOverlay.hide()        // parent touched settings: never trap a black screen
         seeded = false            // re-seed top app
-        lastYouTubeRestricted = null
+        lastRestricted = null
     }
 
     /** Correct PIN entered: start grace, relaunch the app the user wanted. */
