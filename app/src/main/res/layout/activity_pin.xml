@@ -3,38 +3,62 @@
     android:id="@+id/pin_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#101418">
+    android:background="#171D21">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:orientation="vertical"
-        android:gravity="center"
-        android:padding="48dp">
+        android:gravity="center_horizontal"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/pin_title"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center"
             android:text="@string/locked_title"
-            android:textSize="28sp"
-            android:textColor="#FFFFFF" />
+            android:textSize="34sp"
+            android:textStyle="bold"
+            android:textColor="#F0F1F0" />
+
+        <TextView
+            android:id="@+id/pin_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:text="@string/pin_parent_hint"
+            android:textSize="17sp"
+            android:textColor="#98A1A5" />
 
         <TextView
             android:id="@+id/pin_display"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:textSize="48sp"
-            android:textColor="#FFC107"
-            android:minWidth="200dp"
-            android:gravity="center" />
+            android:layout_marginTop="22dp"
+            android:minWidth="190dp"
+            android:gravity="center"
+            android:text="○ ○ ○ ○"
+            android:textSize="38sp"
+            android:textColor="#F0F1F0" />
+
+        <FrameLayout
+            android:id="@+id/pin_keypad_host"
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
+            android:layout_marginTop="13dp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/pin_hint_text"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="11dp"
+            android:gravity="center"
             android:text="@string/pin_hint"
             android:textSize="16sp"
-            android:textColor="#8899A6" />
+            android:textColor="#98A1A5" />
     </LinearLayout>
 </FrameLayout>

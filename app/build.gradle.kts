@@ -31,6 +31,7 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
+            applicationIdSuffix = ".preview"
         }
         release {
             isMinifyEnabled = false

@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- BAL exemption on Android 14: granted once via appops; we never draw overlays -->
+    <!-- Brief blackout while the PIN activity is raised; separate from its inline keypad. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
@@ -14,14 +14,14 @@
 
     <application
         android:label="@string/app_title"
-        android:icon="@drawable/ic_launcher_tvlock"
+        android:icon="@drawable/jeda_icon"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
         android:allowBackup="false">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:banner="@drawable/ic_launcher_tvlock">
+            android:banner="@drawable/jeda_banner">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title">JedaTV</string>
-    <string name="service_description">JedaTV</string>
+    <string name="app_title">Jeda</string>
+    <string name="service_description">Jeda</string>
     <string name="locked_title">🔒 Aplikasi terkunci</string>
     <string name="overlay_locked">⏳ Menyiapkan layar PIN…</string>
     <string name="pin_hint">Masukkan PIN 4 digit dengan remote</string>
+    <string name="pin_parent_hint">Masukkan PIN orang tua</string>
     <string name="wrong_pin">PIN salah</string>
     <string name="unlocked">Terbuka</string>
     <string name="btn_setup_pin">Buat atau ubah PIN</string>
@@ -21,7 +22,7 @@
     <string name="pin_typing_fmt">PIN: %1$s</string>
     <string name="pin_saved">PIN tersimpan</string>
     <string name="pin_need_4">PIN harus 4 digit</string>
-    <string name="status_fmt">PIN: %1$s\nAplikasi dikunci: %2$s\nJeda PIN: %3$s\nLayanan: %4$s\n%5$s\nYouTube bebas PIN Sabtu–Minggu 06.00–21.00 WIB</string>
+    <string name="status_fmt">PIN: %1$s\nAplikasi dikunci: %2$s\nJeda PIN: %3$s\nLayanan: %4$s\n%5$s</string>
     <string name="lock_armed">Kunci aktif 🔒</string>
     <string name="lock_needs_pin">Belum aktif: buat PIN dahulu</string>
     <string name="lock_open_fmt">Terbuka %1$d menit lagi 🔓</string>
