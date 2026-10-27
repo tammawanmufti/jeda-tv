@@ -39,11 +39,6 @@ class LockPollService : Service() {
     private var targetPkg: String? = null
     private var pendingConsume: String? = null
     private var pendingUntil = 0L
-    // True from the moment we force-stopped the blocked app under the blackout
-    // until the gate is confirmed (or a fuse/release path clears it). While
-    // true, the tick() stand-down must NOT release the overlay: a spam-press
-    // would otherwise land on the freshly-revealed launcher icon.
-    private var blackoutHold = false
 
     override fun onCreate() {
         super.onCreate()
@@ -82,14 +77,9 @@ class LockPollService : Service() {
                 gateTarget, blocked, now, prefs.schedules(gateTarget), prefs.isPaused(now))) {
             // A schedule window or parent pause began while the PIN screen was open.
             gateUp = false
-            blackoutHold = false
             GateOverlay.hide()
             PinActivity.instance?.dismissForFreeWindow()
             targetPkg = null
-            packageManager.getLaunchIntentForPackage(gateTarget)?.let {
-                it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(it)
-            }
             return
         }
         val from = if (seeded) now - 15_000 else now - 10 * 60_000L
@@ -110,8 +100,20 @@ class LockPollService : Service() {
         if (evTop != null || lastTop == null) lastTop = t
         val foregroundChanged = evTop != null && evTop != prevTop
         if (t == null) { seeded = true; return }
-        if (prefs.graceMinutes() == 0 && prevTop == prefs.unlockedPackage() && t != prevTop) {
-            prefs.closeGrace()
+        if (prefs.graceMinutes() == 0) {
+            val unlockedPkg = prefs.unlockedPackage()
+            if (unlockedPkg != null) {
+                if (!LockPolicy.keepsZeroGraceSession(unlockedPkg, t, packageName,
+                        pendingConsume == unlockedPkg && now < pendingUntil)) {
+                    prefs.closeGrace()
+                } else if (prefs.isUnlocked(unlockedPkg, now) &&
+                    (t == unlockedPkg || prevTop == unlockedPkg) &&
+                    (t != prevTop || prefs.unlockUntil() - now < SETTINGS_RETURN_WINDOW_MS / 2)) {
+                    // Keep a playing app's visit alive. On entering Settings,
+                    // allow enough time to return without restarting playback.
+                    prefs.setUnlock(unlockedPkg, now + SETTINGS_RETURN_WINDOW_MS)
+                }
+            }
         }
         val restricted = LockPolicy.requiresPin(t, blocked, now,
             prefs.schedules(t), prefs.isPaused(now))
@@ -133,8 +135,7 @@ class LockPollService : Service() {
                 gateUp = false
                 raiseGate(t, now)
             } else {
-                FileLogger.log("overlay HARD CAP 10s — forcing hide (hold=$blackoutHold gateUp=$gateUp top=$t)")
-                blackoutHold = false
+                FileLogger.log("overlay HARD CAP 10s — forcing hide (gateUp=$gateUp top=$t)")
                 GateOverlay.hide()
             }
         }
@@ -153,28 +154,11 @@ class LockPollService : Service() {
             if (t == packageName) {
                 // gate is up — the blackout did its job, the PIN screen is
                 // visible now; drop the overlay underneath it
-                blackoutHold = false
                 GateOverlay.hide()
                 return
             }
             if (!locked) {
-                // The blocked app vanished because OUR force-stop killed it and
-                // the launcher is showing: HOLD the blackout. A spam-press can
-                // land at any moment, and releasing the overlay here is exactly
-                // the window a fast repeat click slips through.
-                if (blackoutHold) {
-                    // The PIN window must be coming on top of the blackout; if
-                    // the gate never confirmed by the watchdog deadline, retry
-                    // raising it — the overlay keeps the screen dead meanwhile.
-                    if (now - gateRaisedAt > GATE_CONFIRM_MS) {
-                        FileLogger.log("hold: gate retry (top=$t launcher-state)")
-                        targetPkg?.let { raiseGate(it, now) }
-                    }
-                    return
-                }
-                // neither the gate nor a blocked app is on top (parent pressed
-                // HOME, launcher is showing): nothing to guard — stand down and
-                // release the blackout immediately
+                // The parent left the PIN screen for Home or another free app.
                 gateUp = false
                 targetPkg = null
                 GateOverlay.hide()
@@ -240,33 +224,12 @@ class LockPollService : Service() {
             // regardless of how long the gate activity takes to launch below.
             GateOverlay.show(this, now)
             startActivity(Intent(this, PinActivity::class.java).apply {
+                putExtra(PinActivity.EXTRA_TARGET_PACKAGE, t)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
                          Intent.FLAG_ACTIVITY_CLEAR_TOP or
                          Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS or
                          Intent.FLAG_ACTIVITY_SINGLE_TOP)
             })
-            // Kill the app underneath the blackout: even if the profile picker
-            // rendered before the overlay landed, taps cannot reach it and no
-            // video can start. Safe to do because onUnlocked() relaunches the
-            // app by package after a correct PIN. Guarded by gateUp so a fast
-            // unlock (gateUp=false before this fires) never kills the app the
-            // user is legitimately opening.
-            handler.postDelayed({
-                if (gateUp && targetPkg == t) {
-                    try {
-                        val am = Class.forName("android.app.ActivityManager")
-                            .getMethod("getService").invoke(null)
-                        am.javaClass.getMethod("forceStopPackage", String::class.java, Int::class.java)
-                            .invoke(am, t, 0)
-                        blackoutHold = true
-                        FileLogger.log("force-stop $t OK — blackout HOLDING")
-                    } catch (e: Exception) {
-                        // hidden API blocked on this ROM (likely on API 34) — the
-                        // blackout + gate still protect; this is best-effort only
-                        FileLogger.log("force-stop DENIED: ${e.javaClass.simpleName}")
-                    }
-                }
-            }, 500)
             // Cooldown window opens now (gate visible on the launch path / or when
             // the watchdog re-arms after seeing it on top, see tick()).
             recoveryReadyAt = now + RECOVERY_COOLDOWN_MS
@@ -287,44 +250,31 @@ class LockPollService : Service() {
         blocked = set
         p.setBlocked(set)
         gateUp = false            // re-arm instantly on any config change
-        blackoutHold = false      // settings opened by the parent: release all holds
         GateOverlay.hide()        // parent touched settings: never trap a black screen
         seeded = false            // re-seed top app
         lastRestricted = null
     }
 
-    /** Correct PIN entered: start grace, relaunch the app the user wanted. */
+    /** Correct PIN entered: uncover the existing app task and preserve its state. */
     fun onUnlocked() {
         val p = Prefs(this)
         val grace = p.graceMinutes()
         val until = when {
             grace < 0 -> Long.MAX_VALUE
-            else -> System.currentTimeMillis() + maxOf(grace * 60_000L, 15_000L)
+            grace == 0 -> System.currentTimeMillis() + SETTINGS_RETURN_WINDOW_MS
+            else -> System.currentTimeMillis() + grace * 60_000L
         }
         val t = targetPkg
         if (t != null) p.setUnlock(t, until)
         gateUp = false
-        blackoutHold = false
         GateOverlay.hide()
         targetPkg = null
         pendingConsume = t
         pendingUntil = System.currentTimeMillis() + 10_000
-        handler.postDelayed({
-            t?.let {
-                packageManager.getLaunchIntentForPackage(it)?.let { li ->
-                    li.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-                    try { startActivity(li) } catch (_: Exception) {
-                        startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    }
-                }
-            }
-        }, 350)
     }
 
     fun onGateDismissed() {
         gateUp = false
-        blackoutHold = false
         // The gate was shoved aside (a dedicated-button relaunch lands on top
         // of it). onPause fires the same instant the shove happens — far ahead
         // of any poll detection — so re-blackout RIGHT NOW instead of exposing
@@ -365,6 +315,7 @@ class LockPollService : Service() {
         // GATE_CONFIRM_MS + RECOVERY_COOLDOWN_MS so it never fires in normal
         // operation — it is the last-resort fuse.
         const val OVERLAY_MAX_MS = 10_000L
+        const val SETTINGS_RETURN_WINDOW_MS = 30 * 60_000L
         var instance: LockPollService? = null
     }
 }

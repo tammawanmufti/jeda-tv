@@ -45,4 +45,16 @@ class LockPolicyTest {
         assertTrue(LockPolicy.requiresPin("app", setOf("app"), at(26, 12, 0), emptyList(), false))
     }
 
+    @Test fun nativeSettingsKeepsCurrentAppVisitButHomeAndOtherAppsEndIt() {
+        val smartTube = "org.smarttube.stable"
+        val jeda = "com.sirkala.jedatv"
+        fun keeps(top: String, returning: Boolean = false) =
+            LockPolicy.keepsZeroGraceSession(smartTube, top, jeda, returning)
+        assertTrue(keeps(smartTube))
+        assertTrue(keeps("com.android.tv.settings"))
+        assertTrue(keeps(jeda, returning = true))
+        assertFalse(keeps(jeda))
+        assertFalse(keeps("com.gathin.tvhome"))
+        assertFalse(keeps("com.netflix.ninja"))
+    }
 }

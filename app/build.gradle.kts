@@ -15,8 +15,8 @@ android {
         applicationId = "com.sirkala.jedatv"
         minSdk = 26
         targetSdk = 34
-        versionCode = 3
-        versionName = "0.1.2"
+        versionCode = 10
+        versionName = "0.1.9"
     }
 
     if (!releaseKeystore.isNullOrBlank()) {

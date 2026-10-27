@@ -127,7 +127,7 @@ class PinActivity : Activity() {
                     verifying = false
                     if (correct) {
                         accepted = true
-                        hint.text = if (prefs.english()) "Opening app…" else "Membuka aplikasi…"
+                        hint.text = if (prefs.english()) "Resuming app…" else "Melanjutkan aplikasi…"
                         LockPollService.instance?.onUnlocked()
                         Toast.makeText(this, if (prefs.english()) "Unlocked" else getString(R.string.unlocked),
                             Toast.LENGTH_SHORT).show()
