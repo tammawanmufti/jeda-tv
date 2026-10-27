@@ -10,15 +10,15 @@ object LockNotification {
 
     fun makeChannel(context: Context) {
         val m = context.getSystemService(NotificationManager::class.java)
-        val ch = NotificationChannel(CHANNEL, "JedaTV", NotificationManager.IMPORTANCE_MIN)
+        val ch = NotificationChannel(CHANNEL, "Jeda", NotificationManager.IMPORTANCE_MIN)
         m.createNotificationChannel(ch)
     }
 
     fun build(context: Context): Notification =
         Notification.Builder(context, CHANNEL)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
-            .setContentTitle("JedaTV")
-            .setContentText("running")
+            .setSmallIcon(R.drawable.jeda_symbol)
+            .setContentTitle("Jeda")
+            .setContentText(if (Prefs(context).english()) "App protection active" else "Perlindungan aplikasi aktif")
             .setOngoing(true)
             .build()
 }

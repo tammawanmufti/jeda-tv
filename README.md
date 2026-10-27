@@ -1,30 +1,33 @@
-# JedaTV
+# Jeda
 
-JedaTV adalah aplikasi sumber terbuka untuk membantu keluarga mengunci
+Jeda adalah aplikasi sumber terbuka untuk membantu keluarga mengunci
 aplikasi Android TV dengan PIN empat digit. Aplikasi ini gratis, tanpa iklan,
 akun, pelacak, atau izin internet. Semua pengaturan disimpan di TV.
 
-**Asal proyek:** JedaTV merupakan turunan dari
+**Asal proyek:** Jeda merupakan turunan dari
 [TV App Lock oleh Oleksii Klots](https://github.com/oleksii-klots/tv-app-lock).
 Hak cipta Oleksii Klots, [lisensi MIT asli](LICENSE), dan riwayat commit proyek
-asal dipertahankan. JedaTV dikelola secara terpisah oleh
+asal dipertahankan. Jeda dikelola secara terpisah oleh
 [tammawanmufti](https://github.com/tammawanmufti).
 
 ## Fitur
 
 - Pilih aplikasi yang meminta PIN. Aplikasi baru yang muncul di daftar peluncur
   akan dikunci secara otomatis; beberapa peluncur dan komponen TV dikecualikan.
-- YouTube TV bebas PIN pada Sabtu dan Minggu pukul 06.00–21.00 WIB. Di luar
-  waktu itu, YouTube meminta PIN jika dipilih sebagai aplikasi terkunci.
-- Atur jeda sebelum PIN diminta lagi: 0, 5, 15, 30, 60 menit, atau sampai TV
-  dinyalakan ulang.
+- Orang tua dapat membuat jadwal bebas PIN per aplikasi. Pemasangan baru tidak
+  memiliki jadwal bawaan. Pembaruan mempertahankan jadwal lama yang sudah ada.
+- Jeda PIN sementara untuk semua aplikasi terkunci: 30 detik, 1, 3, 5, 10,
+  15, 30, atau 60 menit, atau sampai TV dinyalakan ulang.
+- Saat aplikasi terkunci dibuka dengan PIN, Jeda mempertahankan aktivitasnya
+  agar video dapat dilanjutkan. Berpindah sebentar ke Setelan TV dan kembali
+  mempertahankan sesi hingga 30 menit; keluar ke Home atau aplikasi lain
+  mengakhiri sesi tersebut.
 - PIN disimpan sebagai hash PBKDF2 dengan salt acak. Setelah lima percobaan
   gagal, input ditunda 30 detik.
-- Antarmuka bahasa Indonesia yang dapat digunakan dengan remote TV.
+- Antarmuka yang dapat digunakan dengan remote TV, dengan pilihan bahasa
+  Indonesia, English, atau mengikuti bahasa TV.
 
-Jadwal YouTube saat ini ditetapkan di
-[`LockPolicy.kt`](app/src/main/java/com/sirkala/jedatv/LockPolicy.kt), belum bisa
-diubah melalui antarmuka. Zona waktunya `Asia/Jakarta`.
+Jadwal dapat diatur dengan remote TV. Zona waktunya `Asia/Jakarta`.
 
 ## Membangun dan memasang
 
@@ -43,15 +46,18 @@ adb connect <ALAMAT_IP_TV>:5555
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
+Build debug memakai ID `com.sirkala.jedatv.preview` agar bisa diuji berdampingan
+dengan rilis Jeda tanpa menimpa data keluarga.
+
 Di TV, berikan izin **Akses penggunaan** dan **Tampil di atas aplikasi lain**
-kepada JedaTV. Buka JedaTV, buat PIN langsung dengan remote, lalu pilih
+kepada Jeda. Buka Jeda, buat PIN langsung dengan remote, lalu pilih
 aplikasi yang akan dikunci. Jangan bagikan PIN melalui chat atau commit Git.
 
-ID paket JedaTV adalah `com.sirkala.jedatv`. Android menganggapnya aplikasi
+ID paket Jeda adalah `com.sirkala.jedatv`. Android menganggapnya aplikasi
 berbeda dari TV App Lock (`com.alexk.tvlock`), sehingga PIN dan daftar aplikasi
 terkunci **tidak berpindah otomatis**. Kedua aplikasi dapat terpasang bersamaan
-selama proses pindah. Setelah JedaTV siap dan diuji, hentikan atau hapus versi
-lama agar kedua layanan tidak saling mengunci. Untuk memperbarui JedaTV di
+selama proses pindah. Setelah Jeda siap dan diuji, hentikan atau hapus versi
+lama agar kedua layanan tidak saling mengunci. Untuk memperbarui Jeda di
 masa depan tanpa menghapus pengaturannya, gunakan ID paket dan kunci
 penandatanganan APK yang sama.
 
@@ -60,11 +66,13 @@ penandatanganan APK yang sama.
 Penguncian memantau aplikasi aktif secara berkala. Layar pertama aplikasi
 terkunci mungkin terlihat sesaat sebelum layar PIN muncul. Orang yang dapat
 mengubah Setelan TV, mencabut izin, atau memakai ADB dapat melewati kunci ini.
-JedaTV ditujukan untuk batasan penggunaan keluarga, bukan sebagai pengaman
+Jeda ditujukan untuk batasan penggunaan keluarga, bukan sebagai pengaman
 perangkat dari pengguna dengan akses administratif. Input HDMI berada di luar
 cakupan kunci aplikasi.
 
 ## Lisensi
 
-[MIT](LICENSE). Kode asal dibuat oleh Oleksii Klots. Perubahan JedaTV dibuat
-untuk proyek turunan ini.
+[MIT](LICENSE). Hak cipta kode asal tetap milik Oleksii Klots. Hak cipta
+perubahan Jeda pada proyek turunan ini dicantumkan atas nama
+[tammawanmufti](https://github.com/tammawanmufti). Kedua pemberitahuan hak
+cipta dan teks lisensi MIT dipertahankan dalam berkas LICENSE.

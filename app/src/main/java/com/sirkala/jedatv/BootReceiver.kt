@@ -11,6 +11,7 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED -> {
                 // "grace until reboot" must truly end at reboot
                 Prefs(context).closeGrace()
+                Prefs(context).clearPause()
                 startGuard(context)
             }
             Intent.ACTION_MY_PACKAGE_REPLACED -> startGuard(context)

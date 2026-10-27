@@ -7,16 +7,12 @@ import android.view.ViewGroup
 import android.widget.Button
 
 /**
- * Hidden on-screen keypad for remotes without number buttons.
- * Summoned by 3x DPAD_UP within 2 s (the Up key still works normally as a
- * navigation key between presses); BACK hides it again.
- * The keypad is GONE until summoned — nothing is permanently visible.
- * It inflates as a ScrollView overlay into a FrameLayout root, so a short
- * screen never clips rows (they become scrollable instead).
+ * Inline keypad for TV remotes. It starts visible on PIN screens; Back hides it,
+ * and three Up presses within two seconds reveal it again.
  */
 class KeypadHelper(
     private val activity: Activity,
-    private val container: ViewGroup,
+    private var container: ViewGroup,
     private val onDigit: (String) -> Unit,
     private val onBackspace: () -> Unit,
     private val onClear: () -> Unit,
@@ -24,7 +20,11 @@ class KeypadHelper(
     private var root: ViewGroup? = null
     private val upTimes = ArrayDeque<Long>()
 
-    val visible: Boolean get() = root?.visibility == View.VISIBLE
+    val visible: Boolean get() = root?.visibility == View.VISIBLE && root?.parent === container
+
+    fun setContainer(host: ViewGroup) {
+        container = host
+    }
 
     /** true = gesture fired and keypad now open (host may still consume the key) */
     fun onKeyDown(keyCode: Int): Boolean {
@@ -62,30 +62,18 @@ class KeypadHelper(
             root!!.findViewById<Button>(R.id.kc).setOnClickListener { onBackspace() }
             root!!.findViewById<Button>(R.id.kx).setOnClickListener { onClear() }
         }
+        if (root!!.parent !== container) {
+            (root!!.parent as? ViewGroup)?.removeView(root)
+            container.addView(root)
+        }
         root!!.visibility = View.VISIBLE
-        blurContent(true)
         root!!.findViewById<Button>(R.id.k1).requestFocus()
     }
 
     fun hide() {
         if (visible) {
             root!!.visibility = View.GONE
-            blurContent(false)
         }
-    }
-
-    /** real blur of the screen behind the keypad (API 31+), scrim dim covers older */
-    private fun blurContent(on: Boolean) {
-        if (android.os.Build.VERSION.SDK_INT < 31) return
-        try {
-            val content = (0 until container.childCount)
-                .map { container.getChildAt(it) }
-                .firstOrNull { it !== root }
-            content?.setRenderEffect(
-                if (on) android.graphics.RenderEffect.createBlurEffect(25f, 25f,
-                        android.graphics.Shader.TileMode.CLAMP)
-                else null)
-        } catch (_: Exception) {}
     }
 
     companion object {
